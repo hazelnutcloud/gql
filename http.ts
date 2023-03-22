@@ -21,6 +21,7 @@ export function GraphQLHTTP<
   ...options
 }: GQLOptions<Ctx, Req>) {
   return async (request: Req) => {
+    console.log(request)
     const accept = request.headers.get('Accept') || ''
 
     const typeList = ['text/html', 'text/plain', 'application/json', '*/*']
@@ -76,7 +77,6 @@ export function GraphQLHTTP<
           { query: queryParams.get('query') } as GraphQLParams,
         )
       } else {
-        console.log(typeList)
         params = Promise.reject(new Error('No query given!'))
       }
     } else if (typeList.length === 1 && typeList[0] === 'text/html') {
