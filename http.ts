@@ -76,6 +76,7 @@ export function GraphQLHTTP<
           { query: queryParams.get('query') } as GraphQLParams,
         )
       } else {
+        console.log(typeList)
         params = Promise.reject(new Error('No query given!'))
       }
     } else if (typeList.length === 1 && typeList[0] === 'text/html') {
