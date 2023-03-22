@@ -1,255 +1,73 @@
-import * as xss from 'https://esm.sh/xss?no-check'
-import { getLoadingMarkup } from './markup.ts'
+export const renderPlaygroundPage = (params: { endpoint: string }) => {
+  const html = `<!--
+	*  Copyright (c) 2021 GraphQL Contributors
+	*  All rights reserved.
+	*
+	*  This source code is licensed under the license found in the
+	*  LICENSE file in the root directory of this source tree.
+	-->
+	<!DOCTYPE html>
+	<html lang="en">
+	 <head>
+		 <title>Arkiver Playground</title>
+		 <style>
+			 body {
+				 height: 100%;
+				 margin: 0;
+				 width: 100%;
+				 overflow: hidden;
+			 }
+	
+			 #graphiql {
+				 height: 100vh;
+			 }
+		 </style>
+	
+		 <!--
+			 This GraphiQL example depends on Promise and fetch, which are available in
+			 modern browsers, but can be "polyfilled" for older browsers.
+			 GraphiQL itself depends on React DOM.
+			 If you do not want to rely on a CDN, you can host these files locally or
+			 include them directly in your favored resource bundler.
+		 -->
+		 <script
+			 src="https://unpkg.com/react@17/umd/react.development.js"
+			 integrity="sha512-Vf2xGDzpqUOEIKO+X2rgTLWPY+65++WPwCHkX2nFMu9IcstumPsf/uKKRd5prX3wOu8Q0GBylRpsDB26R6ExOg=="
+			 crossorigin="anonymous"
+		 ></script>
+		 <script
+			 src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"
+			 integrity="sha512-Wr9OKCTtq1anK0hq5bY3X/AvDI5EflDSAh0mE9gma+4hl+kXdTJPKZ3TwLMBcrgUeoY0s3dq9JjhCQc7vddtFg=="
+			 crossorigin="anonymous"
+		 ></script>
+	
+		 <!--
+			 These two files can be found in the npm module, however you may wish to
+			 copy them directly into your environment, or perhaps include them in your
+			 favored resource bundler.
+			-->
+		 <link rel="stylesheet" href="https://unpkg.com/graphiql/graphiql.min.css" />
+	 </head>
+	
+	 <body>
+		 <div id="graphiql">Loading...</div>
+		 <script
+			 src="https://unpkg.com/graphiql/graphiql.min.js"
+			 type="application/javascript"
+		 ></script>
+		 <script>
+			 ReactDOM.render(
+				 React.createElement(GraphiQL, {
+					 fetcher: GraphiQL.createFetcher({
+						 url: ${params.endpoint},
+					 }),
+					 defaultEditorToolsVisibility: true,
+				 }),
+				 document.getElementById('graphiql'),
+			 );
+		 </script>
+	 </body>
+	</html>`
 
-const { filterXSS } = xss.default as any
-
-export interface MiddlewareOptions {
-  endpoint?: string
-  subscriptionEndpoint?: string
-  workspaceName?: string
-  env?: any
-  config?: any
-  settings?: ISettings
-  schema?: IntrospectionResult
-  tabs?: Tab[]
-  codeTheme?: EditorColours
-}
-
-export type CursorShape = 'line' | 'block' | 'underline'
-export type Theme = 'dark' | 'light'
-
-export interface ISettings {
-  'general.betaUpdates': boolean
-  'editor.cursorShape': CursorShape
-  'editor.theme': Theme
-  'editor.reuseHeaders': boolean
-  'tracing.hideTracingResponse': boolean
-  'tracing.tracingSupported': boolean
-  'editor.fontSize': number
-  'editor.fontFamily': string
-  'request.credentials': string
-  'request.globalHeaders': { [key: string]: string }
-  'schema.polling.enable': boolean
-  'schema.polling.endpointFilter': string
-  'schema.polling.interval': number
-}
-
-export interface EditorColours {
-  property: string
-  comment: string
-  punctuation: string
-  keyword: string
-  def: string
-  qualifier: string
-  attribute: string
-  number: string
-  string: string
-  builtin: string
-  string2: string
-  variable: string
-  meta: string
-  atom: string
-  ws: string
-  selection: string
-  cursorColor: string
-  editorBackground: string
-  resultBackground: string
-  leftDrawerBackground: string
-  rightDrawerBackground: string
-}
-
-export interface IntrospectionResult {
-  __schema: any
-}
-
-export interface RenderPageOptions extends MiddlewareOptions {
-  version?: string
-  cdnUrl?: string
-  env?: any
-  title?: string
-  faviconUrl?: string | null
-}
-
-export interface Tab {
-  endpoint: string
-  query: string
-  name?: string
-  variables?: string
-  responses?: string[]
-  headers?: { [key: string]: string }
-}
-
-const loading = getLoadingMarkup()
-
-const CONFIG_ID = 'playground-config'
-
-const filter = (val: string) => {
-  return filterXSS(val, {
-    // @ts-ignore
-    whiteList: [],
-    stripIgnoreTag: true,
-    stripIgnoreTagBody: ['script'],
-  })
-}
-
-const getCdnMarkup = ({
-  version,
-  cdnUrl = '//cdn.jsdelivr.net/npm',
-  faviconUrl,
-}: {
-  faviconUrl?: string | null
-  version?: string
-  cdnUrl?: string
-}) => {
-  const buildCDNUrl = (packageName: string, suffix: string) =>
-    filter(
-      `${cdnUrl}/${packageName}${version ? `@${version}` : ''}/${suffix}` || '',
-    )
-  return `
-    <link 
-      rel="stylesheet" 
-      href="${
-    buildCDNUrl('graphql-playground-react', 'build/static/css/index.css')
-  }"
-    />
-    ${
-    typeof faviconUrl === 'string'
-      ? `<link rel="shortcut icon" href="${filter(faviconUrl || '')}" />`
-      : ''
-  }
-    ${
-    faviconUrl === undefined
-      ? `<link rel="shortcut icon" href="${
-        buildCDNUrl('graphql-playground-react', 'build/favicon.png')
-      }" />`
-      : ''
-  }
-    <script 
-      src="${
-    buildCDNUrl('graphql-playground-react', 'build/static/js/middleware.js')
-  }"
-    ></script>
-`
-}
-
-const renderConfig = (config: unknown) => {
-  return filterXSS(`<div id="${CONFIG_ID}">${JSON.stringify(config)}</div>`, {
-    whiteList: { div: ['id'] },
-  })
-}
-
-export function renderPlaygroundPage(options: RenderPageOptions) {
-  const extendedOptions:
-    & Partial<{
-      canSaveConfig: boolean
-      configString: string
-    }>
-    & RenderPageOptions = {
-      ...options,
-      canSaveConfig: false,
-    }
-
-  if (options.config) {
-    extendedOptions.configString = JSON.stringify(options.config, null, 2)
-  }
-  if (!extendedOptions.endpoint && !extendedOptions.configString) {
-    /* tslint:disable-next-line */
-    console.warn(
-      `WARNING: You didn't provide an endpoint and don't have a .graphqlconfig. Make sure you have at least one of them.`,
-    )
-  } else if (extendedOptions.endpoint) {
-    extendedOptions.endpoint = filter(extendedOptions.endpoint || '')
-  }
-
-  return `
-  <!DOCTYPE html>
-  <html>
-  <head>
-    <meta charset=utf-8 />
-    <meta name="viewport" content="user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, minimal-ui">
-    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700|Source+Code+Pro:400,700" rel="stylesheet">
-    <title>${extendedOptions.title || 'GraphQL Playground'}</title>
-    ${
-    extendedOptions.env === 'react' || extendedOptions.env === 'electron'
-      ? ''
-      : getCdnMarkup(extendedOptions)
-  }
-  </head>
-  <body>
-    <style type="text/css">
-      html {
-        font-family: "Open Sans", sans-serif;
-        overflow: hidden;
-      }
-  
-      body {
-        margin: 0;
-        background: #172a3a;
-      }
-      #${CONFIG_ID} {
-        display: none;
-      }
-  
-      .playgroundIn {
-        -webkit-animation: playgroundIn 0.5s ease-out forwards;
-        animation: playgroundIn 0.5s ease-out forwards;
-      }
-  
-      @-webkit-keyframes playgroundIn {
-        from {
-          opacity: 0;
-          -webkit-transform: translateY(10px);
-          -ms-transform: translateY(10px);
-          transform: translateY(10px);
-        }
-        to {
-          opacity: 1;
-          -webkit-transform: translateY(0);
-          -ms-transform: translateY(0);
-          transform: translateY(0);
-        }
-      }
-  
-      @keyframes playgroundIn {
-        from {
-          opacity: 0;
-          -webkit-transform: translateY(10px);
-          -ms-transform: translateY(10px);
-          transform: translateY(10px);
-        }
-        to {
-          opacity: 1;
-          -webkit-transform: translateY(0);
-          -ms-transform: translateY(0);
-          transform: translateY(0);
-        }
-      }
-    </style>
-    ${loading.container}
-    ${renderConfig(extendedOptions)}
-    <div id="root" />
-    <script type="text/javascript">
-      window.addEventListener('load', function (event) {
-        ${loading.script}
-  
-        const root = document.getElementById('root');
-        root.classList.add('playgroundIn');
-        const configText = document.getElementById('${CONFIG_ID}').innerText;
-        
-        if(configText && configText.length) {
-          try {
-            GraphQLPlayground.init(root, JSON.parse(configText));
-          }
-          catch(err) {
-            console.error("could not find config")
-          }
-        }
-        else {
-          GraphQLPlayground.init(root);
-        }
-      })
-    </script>
-  </body>
-  </html>
-`
+  return html
 }
