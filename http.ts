@@ -16,12 +16,10 @@ export function GraphQLHTTP<
   Req extends GQLRequest = GQLRequest,
   Ctx extends { request: Req } = { request: Req },
 >({
-  playgroundOptions = {},
   headers = {},
   ...options
 }: GQLOptions<Ctx, Req>) {
   return async (request: Req) => {
-    console.log(request)
     const accept = request.headers.get('Accept') || ''
 
     const typeList = ['text/html', 'text/plain', 'application/json', '*/*']
@@ -57,7 +55,6 @@ export function GraphQLHTTP<
       ) {
         const { renderPlaygroundPage } = await import('./graphiql/render.ts')
         const playground = renderPlaygroundPage({
-          ...playgroundOptions,
           endpoint: '/graphql',
         })
 

@@ -1,6 +1,4 @@
 import type { GraphQLArgs, GraphQLSchema } from './deps.ts'
-import type { RenderPageOptions } from './graphiql/render.ts'
-
 /**
  * gql options
  */
@@ -16,10 +14,6 @@ export interface GQLOptions<Context = any, Req extends GQLRequest = GQLRequest>
    * Custom headers for responses
    */
   headers?: HeadersInit
-  /**
-   * Custom options for GraphQL Playground
-   */
-  playgroundOptions?: Omit<RenderPageOptions, 'endpoint'>
 }
 
 interface Params {
